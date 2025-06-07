@@ -1,4 +1,5 @@
 import streamlit as st
+import cv2
 import numpy as np
 import pandas as pd
 from datetime import datetime, date
@@ -12,7 +13,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 import threading
 import queue
 import calendar
-import cv2
 import sqlite3
 import json
 import io
@@ -32,6 +32,11 @@ if 'video_frame' not in st.session_state:
     st.session_state.video_frame = None
 if 'recognition_status' not in st.session_state:
     st.session_state.recognition_status = ""
+# Authentication session state variables
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = False
+if 'username' not in st.session_state:
+    st.session_state.username = ""
 
 # File path for database persistence
 DATABASE_FILE = "worker_tracking.db"
@@ -1345,6 +1350,40 @@ def attendance_statistics_page():
         mime="text/csv"
     )
 
+def login_page():
+    """Login page for authentication"""
+    st.header("🔐 Login")
+    
+    # Create two columns for a centered login form
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col2:
+        st.write("Please login to access the Worker Tracking System")
+        
+        # Login form
+        with st.form("login_form"):
+            username = st.text_input("Username")
+            password = st.text_input("Password", type="password")
+            submit_button = st.form_submit_button("Login")
+            
+            if submit_button:
+                # Validate credentials (hardcoded for this example)
+                if username == "walid" and password == "walid123":
+                    st.session_state.authenticated = True
+                    st.session_state.username = username
+                    st.success("Login successful! Redirecting...")
+                    st.rerun()
+                else:
+                    st.error("Invalid username or password")
+        
+        st.info("Note: Default credentials - Username: walid, Password: walid123")
+
+def logout():
+    """Logout function"""
+    st.session_state.authenticated = False
+    st.session_state.username = ""
+    st.rerun()
+
 def main():
     """Main application"""
     st.set_page_config(
@@ -1353,14 +1392,22 @@ def main():
         layout="wide"
     )
     
-    st.title("🎥 Real-time Worker Tracking System")
-    
     # Initialize database and load data on startup
     init_database()
     # Remove old CSV and pickle files
     remove_old_files()
     # Load data from database
     load_data()
+    
+    # Check if user is authenticated
+    if not st.session_state.authenticated:
+        login_page()
+        return
+    
+    st.title("🎥 Real-time Worker Tracking System")
+    
+    # Show welcome message with username
+    st.write(f"Welcome, **{st.session_state.username}**! 👋")
     
     # Sidebar navigation
     st.sidebar.title("Navigation")
@@ -1409,8 +1456,15 @@ def main():
         save_data()
         st.sidebar.success("Data saved!")
     
+    # Add logout button
+    st.sidebar.markdown("---")
+    if st.sidebar.button("🔒 Logout"):
+        logout()
+    
     # Cleanup on app shutdown
     if not st.session_state.get('camera_active', False):
+        if 'video_processor' in st.session_state:
+            st.session_state.video_processor.stop_camera()
         if 'video_processor' in st.session_state:
             st.session_state.video_processor.stop_camera()
 
