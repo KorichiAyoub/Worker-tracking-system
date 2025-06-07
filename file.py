@@ -1,5 +1,4 @@
 import streamlit as st
-import cv2
 import numpy as np
 import pandas as pd
 from datetime import datetime, date
@@ -13,6 +12,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import threading
 import queue
 import calendar
+import cv2
 import sqlite3
 import json
 import io
