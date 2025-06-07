@@ -1376,8 +1376,6 @@ def login_page():
                 else:
                     st.error("Invalid username or password")
         
-        st.info("Note: Default credentials - Username: walid, Password: walid123")
-
 def logout():
     """Logout function"""
     st.session_state.authenticated = False
